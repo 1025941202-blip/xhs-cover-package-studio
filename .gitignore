@@ -1,0 +1,9 @@
+.env.local
+node_modules/
+.DS_Store
+.bin/
+.server*.log
+.server.pid
+.public-tunnel.log
+.tunnel.log
+output/

@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>小红书封面发布包网站</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;700;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css?v=20260531-cover-studio" />
+  </head>
+  <body>
+    <div class="grain"></div>
+    <div class="app-shell">
+      <aside class="control-rail" aria-label="创作输入">
+        <div class="brand-lockup">
+          <span>Poster Package Studio</span>
+          <h1>小红书封面发布包</h1>
+        </div>
+
+        <section class="access-card" id="accessCard">
+          <div>
+            <strong>访问码</strong>
+            <small id="accessHint">正在检查公网保护</small>
+          </div>
+          <input id="accessCode" type="password" autocomplete="off" placeholder="输入访问码" />
+        </section>
+
+        <label class="field">
+          <span>上传文案文件</span>
+          <input id="fileInput" type="file" accept=".txt,.md,.docx,.doc,.pdf,video/*" />
+          <small id="fileHint">支持 TXT / Markdown / DOCX。PDF、视频和旧版 DOC 下一版再接。</small>
+        </label>
+
+        <label class="field grow">
+          <span>粘贴你的文案</span>
+          <textarea id="material" rows="12" placeholder="把原始文案、口播稿、选题说明粘贴到这里。"></textarea>
+        </label>
+
+        <div class="split-fields">
+          <label class="field compact">
+            <span>账号感觉</span>
+            <select id="persona">
+              <option>AI + IP 实战，小白友好</option>
+              <option>一人公司效率工具</option>
+              <option>内容创作者幕后笔记</option>
+              <option>高级感知识博主</option>
+            </select>
+          </label>
+          <label class="field compact">
+            <span>视觉气质</span>
+            <select id="style">
+              <option>黑红大师级 UI 海报</option>
+              <option>红色渐变悬浮卡片</option>
+              <option>影棚人物海报质感</option>
+              <option>巨型标题视觉冲击</option>
+            </select>
+          </label>
+        </div>
+
+        <button class="primary-action" id="generateDraft">
+          <span>生成封面文案和发布包</span>
+        </button>
+        <p class="rail-status" id="railStatus">先输入文案，系统会先出封面标题、提示词、发布标题、正文和话题。</p>
+      </aside>
+
+      <main class="studio-stage">
+        <header class="stage-top">
+          <div>
+            <p class="eyebrow">Crimson Poster Studio</p>
+            <h2>从一段文案，到 5 版封面和完整发布包</h2>
+          </div>
+          <div class="provider-pill" id="providerPill">
+            <span class="status-dot"></span>
+            <span>连接中</span>
+          </div>
+        </header>
+
+        <nav class="step-strip" aria-label="生产步骤">
+          <button class="step active" data-step="draft"><b>01</b><span>方案确认</span></button>
+          <button class="step" data-step="covers"><b>02</b><span>5 版封面</span></button>
+          <button class="step" data-step="final"><b>03</b><span>最终发布包</span></button>
+        </nav>
+
+        <section class="stage-panel active" id="draftPanel" data-panel="draft">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Draft</p>
+              <h3>先确认封面文案和提示词</h3>
+            </div>
+            <button class="ghost-action" id="generateCovers" disabled>确认并生成 5 版封面</button>
+          </div>
+
+          <div class="draft-grid">
+            <label class="field">
+              <span>封面主标题</span>
+              <input id="coverTitle" type="text" placeholder="等待生成" />
+            </label>
+            <label class="field">
+              <span>封面副标题</span>
+              <input id="coverSubtitle" type="text" placeholder="可为空" />
+            </label>
+            <label class="field wide">
+              <span>发布标题</span>
+              <input id="publishTitle" type="text" placeholder="等待生成" />
+            </label>
+            <label class="field wide">
+              <span>发布正文</span>
+              <textarea id="body" rows="8" placeholder="等待生成"></textarea>
+            </label>
+            <label class="field wide">
+              <span>话题</span>
+              <input id="hashtags" type="text" placeholder="用空格分隔，例如 #AI封面 #小红书运营" />
+            </label>
+          </div>
+
+          <div class="cover-prompt-list" id="coverPromptList">
+            <div class="empty-state">生成草稿后，这里会出现 5 个封面方向。每个方向都能编辑。</div>
+          </div>
+        </section>
+
+        <section class="stage-panel" id="coversPanel" data-panel="covers">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Cover Versions</p>
+              <h3>选择一张封面，或者输入意见重生成</h3>
+            </div>
+            <button class="ghost-action" id="finalizeCover" disabled>确认这张作为最终版</button>
+          </div>
+
+          <div class="cover-version-grid" id="coverGrid">
+            <div class="empty-state">确认方案后会生成 5 个封面版本。</div>
+          </div>
+
+          <section class="revision-box">
+            <label class="field">
+              <span>修改窗口</span>
+              <textarea id="revisionText" rows="4" placeholder="例如：标题更短一点，红色渐变更强，卡片更多一点，人物海报感更明显。"></textarea>
+            </label>
+            <button class="secondary-action" id="regenerateSelected" disabled>按意见重生成选中封面</button>
+          </section>
+        </section>
+
+        <section class="stage-panel" id="finalPanel" data-panel="final">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Publish Package</p>
+              <h3>最终可发布内容</h3>
+            </div>
+            <div class="download-row">
+              <button class="ghost-action" id="copyPackage" disabled>复制文案</button>
+              <button class="ghost-action" id="downloadPng" disabled>下载封面</button>
+              <button class="ghost-action" id="downloadMarkdown" disabled>下载 MD</button>
+              <button class="ghost-action" id="downloadText" disabled>下载 TXT</button>
+              <button class="ghost-action" id="downloadZip" disabled>下载完整包</button>
+            </div>
+          </div>
+          <div class="final-package" id="finalPackage">
+            <div class="empty-state">确认最终封面后，这里会出现封面图、发布标题、正文和话题。</div>
+          </div>
+        </section>
+      </main>
+
+      <aside class="preview-dock" aria-label="封面预览">
+        <div class="preview-head">
+          <div>
+            <p class="eyebrow">Live Preview</p>
+            <h3>3:4 封面</h3>
+          </div>
+          <span id="previewBadge">未生成</span>
+        </div>
+        <div class="phone-frame">
+          <div class="phone-screen" id="previewScreen">
+            <div class="poster-placeholder">
+              <span>Cover</span>
+              <strong>等待生成</strong>
+              <p>5 个版本会在这里预览。</p>
+            </div>
+          </div>
+        </div>
+        <div class="mini-log" id="miniLog">修改窗口会保留当前版本的重生成记录。</div>
+      </aside>
+    </div>
+
+    <div class="toast" id="toast" hidden></div>
+    <script type="module" src="./app.js?v=20260531-cover-studio"></script>
+  </body>
+</html>

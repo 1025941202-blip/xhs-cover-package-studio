@@ -1,0 +1,16 @@
+{
+  "name": "xhs-cover-package-studio",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "start:web": "APP_MODE=web HOST=0.0.0.0 node server.mjs",
+    "start:mock": "MOCK_AI=1 node server.mjs",
+    "check": "node --check server.mjs && node --check app.js && node --check xhs-cover-rules.mjs && node --check server-utils.mjs",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
