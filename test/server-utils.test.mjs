@@ -4,13 +4,13 @@ import { Buffer } from "node:buffer";
 import { createZip, extractDocxText, requireAccessCode } from "../server-utils.mjs";
 
 test("access code is required when APP_ACCESS_CODE is configured", () => {
-  assert.equal(requireAccessCode({ expected: "film2026", provided: "film2026" }).ok, true);
+  assert.equal(requireAccessCode({ expected: "yulu9999", provided: "yulu9999" }).ok, true);
 
-  const missing = requireAccessCode({ expected: "film2026", provided: "" });
+  const missing = requireAccessCode({ expected: "yulu9999", provided: "" });
   assert.equal(missing.ok, false);
   assert.equal(missing.status, 401);
 
-  const wrong = requireAccessCode({ expected: "film2026", provided: "wrong" });
+  const wrong = requireAccessCode({ expected: "yulu9999", provided: "wrong" });
   assert.equal(wrong.ok, false);
   assert.equal(wrong.status, 403);
 });
