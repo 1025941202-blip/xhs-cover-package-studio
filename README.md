@@ -43,6 +43,7 @@ HOST=0.0.0.0
 APP_ACCESS_CODE=你的访问码
 DEEPSEEK_API_KEY=你的 DeepSeek Key
 BANANAROUTER_API_KEY=你的 BananaRouter Image2 Key
+MOCK_COPY=1
 ```
 
 API Key 只放服务端环境变量，不要写进前端文件。
@@ -54,6 +55,7 @@ API Key 只放服务端环境变量，不要写进前端文件。
 - `APP_ACCESS_CODE`
 - `DEEPSEEK_API_KEY`
 - `BANANAROUTER_API_KEY`
+- 没有 DeepSeek Key 时先填 `MOCK_COPY=1`
 
 公网版本会监听 Render 提供的 `PORT`，并用 `HOST=0.0.0.0` 对外服务。
 

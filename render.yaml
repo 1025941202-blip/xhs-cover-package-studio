@@ -10,6 +10,8 @@ services:
         value: web
       - key: HOST
         value: 0.0.0.0
+      - key: MOCK_COPY
+        value: "1"
       - key: APP_ACCESS_CODE
         sync: false
       - key: BANANAROUTER_API_KEY

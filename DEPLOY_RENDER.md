@@ -6,8 +6,8 @@
 - Render 账号
 - 三个环境变量：
   - `APP_ACCESS_CODE`
-  - `DEEPSEEK_API_KEY`
   - `BANANAROUTER_API_KEY`
+  - `DEEPSEEK_API_KEY`，如果暂时没有就先设置 `MOCK_COPY=1`
 
 不要把 Key 写进代码、README 或前端文件。
 
@@ -20,8 +20,8 @@
 5. Render 会读取 `render.yaml`。
 6. 在环境变量里填入：
    - `APP_ACCESS_CODE`
-   - `DEEPSEEK_API_KEY`
    - `BANANAROUTER_API_KEY`
+   - `DEEPSEEK_API_KEY`，如果暂时没有就先设置 `MOCK_COPY=1`
 7. 创建服务，等待部署完成。
 8. 打开 Render 分配的 `onrender.com` 地址。
 
@@ -31,6 +31,7 @@
 
 - `APP_MODE=web`
 - `HOST=0.0.0.0`
+- `MOCK_COPY=1`
 - 启动命令：`npm run start:web`
 - 免费规格：`plan: free`
 
