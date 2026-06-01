@@ -1227,6 +1227,60 @@ body::after {
   }
 }
 
+.reference-preview {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid rgba(255, 205, 184, 0.18);
+  border-radius: var(--radius);
+  background: rgba(255, 238, 226, 0.07);
+}
+
+.reference-preview[hidden] {
+  display: none;
+}
+
+.reference-preview img {
+  width: 58px;
+  height: 58px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid rgba(255, 205, 184, 0.18);
+}
+
+.reference-preview strong,
+.reference-preview small {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reference-preview strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.reference-preview small {
+  margin-top: 2px;
+  color: var(--ink-soft);
+  font-size: 11px;
+}
+
+.reference-preview button {
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 205, 184, 0.2);
+  border-radius: 8px;
+  color: var(--ink);
+  background: rgba(255, 238, 226, 0.08);
+  font-weight: 800;
+}
+
 /* Crimson poster visual system */
 :root {
   --ink: #fff4ee;

@@ -9,6 +9,13 @@ const els = {
   accessHint: $("#accessHint"),
   fileInput: $("#fileInput"),
   fileHint: $("#fileHint"),
+  referenceImageInput: $("#referenceImageInput"),
+  referenceImageHint: $("#referenceImageHint"),
+  referencePreview: $("#referencePreview"),
+  referenceImagePreview: $("#referenceImagePreview"),
+  referenceImageName: $("#referenceImageName"),
+  referenceImageMeta: $("#referenceImageMeta"),
+  clearReferenceImage: $("#clearReferenceImage"),
   material: $("#material"),
   persona: $("#persona"),
   style: $("#style"),
@@ -47,6 +54,7 @@ const state = {
   covers: [],
   selectedCoverId: null,
   finalCoverId: null,
+  referenceImage: null,
 };
 
 const NETWORK_ERROR_MESSAGE = "本地生成服务没有连接上。请确认预览服务正在运行，然后刷新页面再试。";
@@ -165,9 +173,11 @@ function showStep(stepName) {
 async function openImageCache() {
   if (!("indexedDB" in window)) return null;
   return new Promise((resolve) => {
-    const request = indexedDB.open("xhs-cover-package-images", 1);
+    const request = indexedDB.open("xhs-cover-package-images", 2);
     request.onupgradeneeded = () => {
-      request.result.createObjectStore("covers", { keyPath: "id" });
+      const db = request.result;
+      if (!db.objectStoreNames.contains("covers")) db.createObjectStore("covers", { keyPath: "id" });
+      if (!db.objectStoreNames.contains("references")) db.createObjectStore("references", { keyPath: "id" });
     };
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => resolve(null);
@@ -175,31 +185,64 @@ async function openImageCache() {
   });
 }
 
-async function cacheCoverImage(id, imageUrl) {
-  if (!imageUrl?.startsWith("data:image/")) return;
+async function putImageCache(storeName, value) {
   const db = await openImageCache();
   if (!db) return;
   await new Promise((resolve) => {
-    const tx = db.transaction("covers", "readwrite");
-    tx.objectStore("covers").put({ id, imageUrl, updatedAt: new Date().toISOString() });
+    const tx = db.transaction(storeName, "readwrite");
+    tx.objectStore(storeName).put(value);
     tx.oncomplete = resolve;
     tx.onerror = resolve;
   });
   db.close();
 }
 
-async function readCoverImage(id) {
+async function getImageCache(storeName, id) {
   const db = await openImageCache();
   if (!db) return null;
   const value = await new Promise((resolve) => {
-    const tx = db.transaction("covers", "readonly");
-    const request = tx.objectStore("covers").get(id);
-    request.onsuccess = () => resolve(request.result?.imageUrl || null);
+    const tx = db.transaction(storeName, "readonly");
+    const request = tx.objectStore(storeName).get(id);
+    request.onsuccess = () => resolve(request.result || null);
     request.onerror = () => resolve(null);
     tx.oncomplete = () => db.close();
     tx.onerror = () => db.close();
   });
   return value;
+}
+
+async function deleteImageCache(storeName, id) {
+  const db = await openImageCache();
+  if (!db) return;
+  await new Promise((resolve) => {
+    const tx = db.transaction(storeName, "readwrite");
+    tx.objectStore(storeName).delete(id);
+    tx.oncomplete = resolve;
+    tx.onerror = resolve;
+  });
+  db.close();
+}
+
+async function cacheCoverImage(id, imageUrl) {
+  if (!imageUrl?.startsWith("data:image/")) return;
+  await putImageCache("covers", { id, imageUrl, updatedAt: new Date().toISOString() });
+}
+
+async function readCoverImage(id) {
+  return (await getImageCache("covers", id))?.imageUrl || null;
+}
+
+async function cacheReferenceImage(referenceImage) {
+  if (!referenceImage?.dataUrl?.startsWith("data:image/")) return;
+  await putImageCache("references", { id: "current", image: referenceImage, updatedAt: new Date().toISOString() });
+}
+
+async function readReferenceImage() {
+  return (await getImageCache("references", "current"))?.image || null;
+}
+
+async function clearReferenceImageCache() {
+  await deleteImageCache("references", "current");
 }
 
 function saveDraftState() {
@@ -217,6 +260,7 @@ function saveDraftState() {
       phase: state.phase,
       packageData: state.packageData,
       covers,
+      referenceImage: state.referenceImage ? { ...state.referenceImage, dataUrl: "__indexeddb__" } : null,
       selectedCoverId: state.selectedCoverId,
       finalCoverId: state.finalCoverId,
     })
@@ -236,6 +280,7 @@ async function restoreDraftState() {
     restoreSelectValue(els.style, draft.style);
     state.packageData = draft.packageData || null;
     state.covers = Array.isArray(draft.covers) ? draft.covers : [];
+    state.referenceImage = null;
     state.selectedCoverId = draft.selectedCoverId || null;
     state.finalCoverId = draft.finalCoverId || null;
 
@@ -243,6 +288,8 @@ async function restoreDraftState() {
       const imageUrl = await readCoverImage(cover.id);
       if (imageUrl) cover.imageUrl = imageUrl;
     }
+    state.referenceImage = await readReferenceImage();
+    renderReferencePreview();
 
     if (state.packageData) {
       renderDraft();
@@ -337,6 +384,95 @@ async function handleFileUpload(event) {
   }
 }
 
+function fileToDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error("参考图读取失败。"));
+    reader.readAsDataURL(file);
+  });
+}
+
+function loadImage(dataUrl) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("参考图无法识别，请换一张图片。"));
+    image.src = dataUrl;
+  });
+}
+
+async function prepareReferenceImage(file) {
+  if (!file.type.startsWith("image/")) throw new Error("请上传 PNG、JPG 或 WEBP 参考图。");
+  if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
+    throw new Error("参考图只支持 PNG、JPG 或 WEBP。");
+  }
+  if (file.size > 12 * 1024 * 1024) throw new Error("参考图太大了，请控制在 12MB 以内。");
+
+  const originalDataUrl = await fileToDataURL(file);
+  const image = await loadImage(originalDataUrl);
+  const maxEdge = 1280;
+  const scale = Math.min(1, maxEdge / Math.max(image.naturalWidth, image.naturalHeight));
+  const width = Math.max(1, Math.round(image.naturalWidth * scale));
+  const height = Math.max(1, Math.round(image.naturalHeight * scale));
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext("2d");
+  context.fillStyle = "#fffdf7";
+  context.fillRect(0, 0, width, height);
+  context.drawImage(image, 0, 0, width, height);
+  return {
+    name: file.name,
+    mimeType: "image/jpeg",
+    width,
+    height,
+    dataUrl: canvas.toDataURL("image/jpeg", 0.88),
+  };
+}
+
+function renderReferencePreview() {
+  const reference = state.referenceImage;
+  els.referencePreview.hidden = !reference;
+  if (!reference) {
+    els.referenceImagePreview.removeAttribute("src");
+    els.referenceImageName.textContent = "参考图";
+    els.referenceImageMeta.textContent = "已压缩到适合生成的尺寸";
+    return;
+  }
+  els.referenceImagePreview.src = reference.dataUrl;
+  els.referenceImageName.textContent = reference.name || "参考图";
+  els.referenceImageMeta.textContent = `${reference.width || "-"} x ${reference.height || "-"}，生成封面时会参考`;
+}
+
+async function handleReferenceImageUpload(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  try {
+    els.referenceImageHint.textContent = "正在处理参考图...";
+    state.referenceImage = await prepareReferenceImage(file);
+    await cacheReferenceImage(state.referenceImage);
+    renderReferencePreview();
+    els.referenceImageHint.textContent = "参考图已加入，生成封面时会参考它的配色、质感或版式。";
+    saveDraftState();
+    toast("参考图已上传。");
+  } catch (error) {
+    const message = friendlyErrorMessage(error, "参考图上传失败。");
+    els.referenceImageHint.textContent = message;
+    toast(message);
+  } finally {
+    event.target.value = "";
+  }
+}
+
+async function clearReferenceImage() {
+  state.referenceImage = null;
+  await clearReferenceImageCache();
+  renderReferencePreview();
+  els.referenceImageHint.textContent = "已移除参考图；之后会完全根据文案生成。";
+  saveDraftState();
+}
+
 async function generateDraft() {
   persistAccessCode();
   const material = els.material.value.trim();
@@ -352,6 +488,7 @@ async function generateDraft() {
       material,
       persona: els.persona.value,
       style: els.style.value,
+      referenceImageName: state.referenceImage?.name || "",
     });
     state.covers = [];
     state.selectedCoverId = null;
@@ -416,6 +553,13 @@ async function generateOneCover(cover, revision = "") {
     coverSubtitle: state.packageData.coverSubtitle,
     basePrompt: cover.prompt,
     revision,
+    referenceImage: state.referenceImage
+      ? {
+          name: state.referenceImage.name,
+          mimeType: state.referenceImage.mimeType,
+          dataUrl: state.referenceImage.dataUrl,
+        }
+      : null,
   });
   if (cover.imageUrl) {
     cover.history = [
@@ -663,6 +807,8 @@ async function downloadZip() {
 
 function bindEvents() {
   els.fileInput.addEventListener("change", handleFileUpload);
+  els.referenceImageInput.addEventListener("change", handleReferenceImageUpload);
+  els.clearReferenceImage.addEventListener("click", clearReferenceImage);
   els.generateDraft.addEventListener("click", generateDraft);
   els.generateCovers.addEventListener("click", generateCovers);
   els.regenerateSelected.addEventListener("click", regenerateSelected);
@@ -683,4 +829,5 @@ function bindEvents() {
 
 bindEvents();
 await restoreDraftState();
+renderReferencePreview();
 await checkStatus();

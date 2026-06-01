@@ -91,20 +91,69 @@ function checkAccess(req, body = {}) {
   return requireAccessCode({ expected: appAccessCode, provided: accessFrom(req, body) });
 }
 
-function mockCopyPackage(material) {
+function materialTheme(material) {
+  const text = String(material || "")
+    .replace(/[#*_`>~-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const first = text.split(/[。！？!?，,；;\n]/)[0]?.trim() || "这件事";
+  return first.length > 18 ? `${first.slice(0, 18)}...` : first;
+}
+
+function mockCopyPackage(material, referenceImageName = "") {
+  const theme = materialTheme(material);
+  const referenceNote = referenceImageName ? `生成时参考用户上传的参考图「${referenceImageName}」的配色、质感和版式节奏。` : "";
   return normalizeCopyPackage({
-    coverTitle: "别再让 AI 封面翻车",
-    coverSubtitle: "先给边界，再要高级感",
-    publishTitle: "我终于搞懂 AI 封面为什么总翻车了",
+    coverTitle: theme,
+    coverSubtitle: "换 5 种视觉讲清楚",
+    publishTitle: `${theme}，我整理成 5 个封面方向`,
     body:
-      "很多人让 AI 做小红书封面时，只说“做高级一点”，结果画面好看但不能发。\n\n真正有效的方式，是先说清楚用户是谁、这张封面要完成什么任务、标题要多醒目、风格边界在哪里。\n\n如果你也经常遇到标题不清楚、画面风格乱、中文容易出错的问题，可以先从封面提示词开始改。先给边界，再让 AI 发挥。",
+      `我把这段内容先拆成一个可发布的小红书包：封面主标题先抓住「${theme}」这个核心，再用 5 个完全不同的视觉方向去测试哪一种更适合点击。\n\n这 5 个方向不会只是在同一个红黑模板里换元素，而是分别从强观点、知识卡片、生活方式、人物 IP 和极简隐喻去表达。\n\n你可以先选最接近账号气质的一版，再在修改窗口里继续细调。`,
     hashtags: ["AI封面", "小红书运营", "内容创作", "提示词", "AI提效"],
-    coverPrompts: Array.from({ length: 5 }, (_, index) => ({
-      name: ["黑红主视觉", "悬浮卡片", "人物影棚", "案例墙", "巨型标题"][index],
-      description: "黑红大师级 UI 海报风格，红色渐变，巨型标题和悬浮作品卡片。",
-      prompt: `基于素材「${material.slice(0, 60)}」生成第 ${index + 1} 张黑红大师级 UI 海报小红书封面。`,
-    })),
+    coverPrompts: [
+      {
+        name: "强观点电影海报",
+        description: "深墨底色，少量酒红聚光，电影节主海报构图，超大标题压住画面。",
+        prompt: `基于素材「${material.slice(0, 60)}」生成强观点电影海报版小红书封面，深色背景、少量酒红聚光、标题居上，适合反常识观点。${referenceNote}`,
+      },
+      {
+        name: "清爽知识卡片",
+        description: "雾蓝和象牙白主色，模块化步骤卡片，信息清楚，适合教程方法论。",
+        prompt: `基于素材「${material.slice(0, 60)}」生成清爽知识卡片版小红书封面，雾蓝、象牙白、鼠尾草绿，标题清晰，画面有 3 个方法模块。${referenceNote}`,
+      },
+      {
+        name: "温柔成长笔记",
+        description: "灰粉、香槟米和柔和自然光，像创作者日记或灵感手稿。",
+        prompt: `基于素材「${material.slice(0, 60)}」生成温柔成长笔记版小红书封面，灰粉和香槟米配色，纸张拼贴、柔光、标题不拥挤。${referenceNote}`,
+      },
+      {
+        name: "人物访谈杂志",
+        description: "人物或拟人主体居中，杂志封面标题层级，带采访感标签。",
+        prompt: `基于素材「${material.slice(0, 60)}」生成人物访谈杂志版小红书封面，主体居中、侧边标题层级、柔和聚光灯、专业 IP 质感。${referenceNote}`,
+      },
+      {
+        name: "极简概念隐喻",
+        description: "大留白和单一核心物件，用视觉隐喻表达内容，不堆元素。",
+        prompt: `基于素材「${material.slice(0, 60)}」生成极简概念隐喻版小红书封面，大留白、单一核心物件、克制高级、标题与物件形成强关系。${referenceNote}`,
+      },
+    ],
   });
+}
+
+function normalizeReferenceImage(value) {
+  if (!value?.dataUrl) return null;
+  const match = String(value.dataUrl).match(/^data:image\/(png|jpeg|jpg|webp);base64,([\s\S]+)$/);
+  if (!match) throw new Error("参考图格式不正确，请上传 PNG、JPG 或 WEBP。");
+  const mimeType = match[1] === "jpg" ? "image/jpeg" : `image/${match[1]}`;
+  const ext = match[1] === "jpeg" ? "jpg" : match[1];
+  const buffer = Buffer.from(match[2], "base64");
+  if (buffer.length > 6 * 1024 * 1024) throw new Error("参考图太大了，请换一张更小的图片。");
+  const safeName = String(value.name || `reference.${ext}`).replace(/[^\w\u4e00-\u9fa5.-]+/g, "-").slice(0, 80);
+  return {
+    buffer,
+    filename: safeName || `reference.${ext}`,
+    mimeType,
+  };
 }
 
 function mockImageData(title) {
@@ -214,7 +263,7 @@ async function handleCopyGenerate(req, res) {
     return;
   }
   if (mockCopy) {
-    sendJSON(res, 200, mockCopyPackage(material));
+    sendJSON(res, 200, mockCopyPackage(material, body.referenceImageName || ""));
     return;
   }
   if (!deepseekApiKey) {
@@ -241,6 +290,7 @@ async function handleCopyGenerate(req, res) {
             material,
             persona: body.persona || "",
             style: body.style || "",
+            referenceImageName: body.referenceImageName || "",
           }),
         },
       ],
@@ -275,11 +325,19 @@ async function handleImageGenerate(req, res) {
     sendJSON(res, 400, { error: "缺少封面标题。" });
     return;
   }
+  let referenceImage;
+  try {
+    referenceImage = normalizeReferenceImage(body.referenceImage);
+  } catch (error) {
+    sendJSON(res, 400, { error: error.message || "参考图无法使用。" });
+    return;
+  }
   const prompt = buildCoverPrompt({
     coverTitle,
     coverSubtitle: body.coverSubtitle || "",
     basePrompt: body.basePrompt || "",
     revision: body.revision || "",
+    referenceImageName: referenceImage?.filename || "",
   });
 
   if (mockImage) {
@@ -295,24 +353,45 @@ async function handleImageGenerate(req, res) {
   const timeout = setTimeout(() => controller.abort(), imageTimeoutMs);
   let upstream;
   try {
-    upstream = await fetch(`${imageBaseURL}/v1/images/generations`, {
-      method: "POST",
-      signal: controller.signal,
-      headers: {
-        Authorization: `Bearer ${imageApiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: body.model || imageModel,
-        prompt,
-        n: 1,
-        size: body.size || "1024x1536",
-        quality: body.quality || "low",
-        output_format: body.output_format || "png",
-        moderation: body.moderation || "auto",
-        response_format: "b64_json",
-      }),
-    });
+    if (referenceImage) {
+      const form = new FormData();
+      form.append("model", body.model || imageModel);
+      form.append("prompt", prompt);
+      form.append("n", "1");
+      form.append("size", body.size || "1024x1536");
+      form.append("quality", body.quality || "low");
+      form.append("output_format", body.output_format || "png");
+      form.append("moderation", body.moderation || "auto");
+      form.append("response_format", "b64_json");
+      form.append("image", new File([referenceImage.buffer], referenceImage.filename, { type: referenceImage.mimeType }));
+      upstream = await fetch(`${imageBaseURL}/v1/images/edits`, {
+        method: "POST",
+        signal: controller.signal,
+        headers: {
+          Authorization: `Bearer ${imageApiKey}`,
+        },
+        body: form,
+      });
+    } else {
+      upstream = await fetch(`${imageBaseURL}/v1/images/generations`, {
+        method: "POST",
+        signal: controller.signal,
+        headers: {
+          Authorization: `Bearer ${imageApiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: body.model || imageModel,
+          prompt,
+          n: 1,
+          size: body.size || "1024x1536",
+          quality: body.quality || "low",
+          output_format: body.output_format || "png",
+          moderation: body.moderation || "auto",
+          response_format: "b64_json",
+        }),
+      });
+    }
   } catch (error) {
     if (error.name === "AbortError") {
       sendJSON(res, 504, { error: "Image2 请求超时，请稍后重试。" });
@@ -335,7 +414,7 @@ async function handleImageGenerate(req, res) {
     sendJSON(res, 502, { error: "Image2 没有返回图片数据。", details: payload });
     return;
   }
-  sendJSON(res, 200, { imageUrl, prompt, provider: imageModel });
+  sendJSON(res, 200, { imageUrl, prompt, provider: imageModel, usedReference: Boolean(referenceImage) });
 }
 
 function cleanupExports() {

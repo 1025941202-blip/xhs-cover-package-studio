@@ -26,7 +26,7 @@ export async function readRequestBuffer(req, maxBytes = 20 * 1024 * 1024) {
 }
 
 export async function readJSON(req) {
-  const buffer = await readRequestBuffer(req, 3 * 1024 * 1024);
+  const buffer = await readRequestBuffer(req, 8 * 1024 * 1024);
   const text = buffer.toString("utf8").trim();
   return text ? JSON.parse(text) : {};
 }

@@ -6,13 +6,16 @@ test("copy prompt asks for five cover directions and publish package fields", ()
   const prompt = buildCopyPrompt({
     material: "这是一段关于 AI 提效的原始文案。",
     persona: "AI + IP 实战，小白友好",
-    style: "黑红大师级 UI 海报",
+    style: "根据文案自动匹配",
+    referenceImageName: "参考海报.png",
   });
 
   assert.match(prompt, /coverPrompts\[5\]/);
   assert.match(prompt, /publishTitle/);
   assert.match(prompt, /话题 5-8 个/);
   assert.match(prompt, /AI 直接生成中文标题/);
+  assert.match(prompt, /5 个封面方向必须有真实差异/);
+  assert.match(prompt, /参考海报\.png/);
 });
 
 test("normalizes a complete cover package into five editable cover prompts", () => {
@@ -34,18 +37,19 @@ test("normalizes a complete cover package into five editable cover prompts", () 
   assert.equal(normalized.coverPrompts[0].id, "cover-1");
 });
 
-test("cover prompt carries crimson poster visual constraints and revision notes", () => {
+test("cover prompt keeps each version distinct and can carry reference image notes", () => {
   const prompt = buildCoverPrompt({
     coverTitle: "别再让 AI 乱画封面",
     coverSubtitle: "先给边界，再要高级感",
-    basePrompt: "暗色背景，红色渐变，悬浮作品卡片",
-    revision: "标题更短，红色更强一点",
+    basePrompt: "雾蓝背景，模块化知识卡片，三段步骤",
+    revision: "标题更短，颜色更清爽一点",
+    referenceImageName: "参考图.jpg",
   });
 
   assert.match(prompt, /小红书封面/);
-  assert.match(prompt, /黑红大师级/);
-  assert.match(prompt, /珊瑚红/);
-  assert.match(prompt, /悬浮网页作品卡片/);
+  assert.match(prompt, /不要把所有版本统一成红黑风格/);
+  assert.match(prompt, /构图和色彩上明显不同/);
+  assert.match(prompt, /参考图\.jpg/);
   assert.match(prompt, /标题更短/);
   assert.match(prompt, /中文标题必须清晰可读/);
 });

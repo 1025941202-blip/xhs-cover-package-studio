@@ -32,6 +32,21 @@
           <small id="fileHint">支持 TXT / Markdown / DOCX。PDF、视频和旧版 DOC 下一版再接。</small>
         </label>
 
+        <label class="field">
+          <span>上传参考图</span>
+          <input id="referenceImageInput" type="file" accept="image/png,image/jpeg,image/webp" />
+          <small id="referenceImageHint">可上传风格、配色或版式参考图，生成封面时会一起参考。</small>
+        </label>
+
+        <div class="reference-preview" id="referencePreview" hidden>
+          <img id="referenceImagePreview" alt="参考图预览" />
+          <div>
+            <strong id="referenceImageName">参考图</strong>
+            <small id="referenceImageMeta">已压缩到适合生成的尺寸</small>
+          </div>
+          <button type="button" id="clearReferenceImage">移除</button>
+        </div>
+
         <label class="field grow">
           <span>粘贴你的文案</span>
           <textarea id="material" rows="12" placeholder="把原始文案、口播稿、选题说明粘贴到这里。"></textarea>
@@ -50,10 +65,12 @@
           <label class="field compact">
             <span>视觉气质</span>
             <select id="style">
-              <option>黑红大师级 UI 海报</option>
-              <option>红色渐变悬浮卡片</option>
-              <option>影棚人物海报质感</option>
-              <option>巨型标题视觉冲击</option>
+              <option>根据文案自动匹配</option>
+              <option>参考图优先，保留内容差异</option>
+              <option>红色渐变电影节质感</option>
+              <option>莫兰迪高级图文感</option>
+              <option>清爽知识卡片</option>
+              <option>极简概念隐喻</option>
             </select>
           </label>
         </div>
