@@ -100,12 +100,28 @@ function materialTheme(material) {
   return first.length > 18 ? `${first.slice(0, 18)}...` : first;
 }
 
-function mockCopyPackage(material, referenceImageName = "") {
+function mockCopyPackage(material, referenceImageName = "", coverConfig = {}) {
   const theme = materialTheme(material);
+  const presetName = String(coverConfig.templateName || "强观点电影海报").trim();
+  const presetPrompt = String(coverConfig.templatePrompt || "").trim();
+  const fontName = String(coverConfig.fontName || "默认风格").trim();
+  const smallText = String(coverConfig.smallText || "").trim();
+  const stickers = String(coverConfig.stickers || "").trim();
+  const coverTitle = String(coverConfig.mainTitle || theme).trim();
+  const coverSubtitle = String(coverConfig.subtitle || "换 5 种视觉讲清楚").trim();
+  const detailNote = [
+    presetPrompt ? `预设风格：${presetName}，${presetPrompt}` : `预设风格：${presetName}`,
+    `字体：${fontName}`,
+    smallText ? `小字/角标：${smallText}` : "",
+    stickers ? `装饰/贴纸：${stickers}` : "",
+    coverConfig.extraRequirements ? `其他要求：${coverConfig.extraRequirements}` : "",
+  ]
+    .filter(Boolean)
+    .join("；");
   const referenceNote = referenceImageName ? `生成时参考用户上传的参考图「${referenceImageName}」的配色、质感和版式节奏。` : "";
   return normalizeCopyPackage({
-    coverTitle: theme,
-    coverSubtitle: "换 5 种视觉讲清楚",
+    coverTitle,
+    coverSubtitle,
     publishTitle: `${theme}，我整理成 5 个封面方向`,
     body:
       `我把这段内容先拆成一个可发布的小红书包：封面主标题先抓住「${theme}」这个核心，再用 5 个完全不同的视觉方向去测试哪一种更适合点击。\n\n这 5 个方向不会只是在同一个红黑模板里换元素，而是分别从强观点、知识卡片、生活方式、人物 IP 和极简隐喻去表达。\n\n你可以先选最接近账号气质的一版，再在修改窗口里继续细调。`,
@@ -114,27 +130,27 @@ function mockCopyPackage(material, referenceImageName = "") {
       {
         name: "强观点电影海报",
         description: "深墨底色，少量酒红聚光，电影节主海报构图，超大标题压住画面。",
-        prompt: `基于素材「${material.slice(0, 60)}」生成强观点电影海报版小红书封面，深色背景、少量酒红聚光、标题居上，适合反常识观点。${referenceNote}`,
+        prompt: `基于素材「${material.slice(0, 60)}」生成强观点电影海报版小红书封面，深色背景、少量酒红聚光、标题居上，适合反常识观点。${detailNote}。${referenceNote}`,
       },
       {
         name: "清爽知识卡片",
         description: "雾蓝和象牙白主色，模块化步骤卡片，信息清楚，适合教程方法论。",
-        prompt: `基于素材「${material.slice(0, 60)}」生成清爽知识卡片版小红书封面，雾蓝、象牙白、鼠尾草绿，标题清晰，画面有 3 个方法模块。${referenceNote}`,
+        prompt: `基于素材「${material.slice(0, 60)}」生成清爽知识卡片版小红书封面，雾蓝、象牙白、鼠尾草绿，标题清晰，画面有 3 个方法模块。${detailNote}。${referenceNote}`,
       },
       {
         name: "温柔成长笔记",
         description: "灰粉、香槟米和柔和自然光，像创作者日记或灵感手稿。",
-        prompt: `基于素材「${material.slice(0, 60)}」生成温柔成长笔记版小红书封面，灰粉和香槟米配色，纸张拼贴、柔光、标题不拥挤。${referenceNote}`,
+        prompt: `基于素材「${material.slice(0, 60)}」生成温柔成长笔记版小红书封面，灰粉和香槟米配色，纸张拼贴、柔光、标题不拥挤。${detailNote}。${referenceNote}`,
       },
       {
         name: "人物访谈杂志",
         description: "人物或拟人主体居中，杂志封面标题层级，带采访感标签。",
-        prompt: `基于素材「${material.slice(0, 60)}」生成人物访谈杂志版小红书封面，主体居中、侧边标题层级、柔和聚光灯、专业 IP 质感。${referenceNote}`,
+        prompt: `基于素材「${material.slice(0, 60)}」生成人物访谈杂志版小红书封面，主体居中、侧边标题层级、柔和聚光灯、专业 IP 质感。${detailNote}。${referenceNote}`,
       },
       {
         name: "极简概念隐喻",
         description: "大留白和单一核心物件，用视觉隐喻表达内容，不堆元素。",
-        prompt: `基于素材「${material.slice(0, 60)}」生成极简概念隐喻版小红书封面，大留白、单一核心物件、克制高级、标题与物件形成强关系。${referenceNote}`,
+        prompt: `基于素材「${material.slice(0, 60)}」生成极简概念隐喻版小红书封面，大留白、单一核心物件、克制高级、标题与物件形成强关系。${detailNote}。${referenceNote}`,
       },
     ],
   });
@@ -263,7 +279,7 @@ async function handleCopyGenerate(req, res) {
     return;
   }
   if (mockCopy) {
-    sendJSON(res, 200, mockCopyPackage(material, body.referenceImageName || ""));
+    sendJSON(res, 200, mockCopyPackage(material, body.referenceImageName || "", body.coverConfig || {}));
     return;
   }
   if (!deepseekApiKey) {
@@ -291,6 +307,7 @@ async function handleCopyGenerate(req, res) {
             persona: body.persona || "",
             style: body.style || "",
             referenceImageName: body.referenceImageName || "",
+            coverConfig: body.coverConfig || {},
           }),
         },
       ],
@@ -338,6 +355,7 @@ async function handleImageGenerate(req, res) {
     basePrompt: body.basePrompt || "",
     revision: body.revision || "",
     referenceImageName: referenceImage?.filename || "",
+    coverConfig: body.coverConfig || {},
   });
 
   if (mockImage) {

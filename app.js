@@ -3,6 +3,145 @@ import { publishMarkdown, publishText } from "./xhs-cover-rules.mjs";
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 
+const coverTemplatePresets = [
+  {
+    id: "hand-drawn-frame",
+    name: "手绘边框",
+    tag: "强点击",
+    tone: "marker",
+    prompt: "主体或人物居中，粗手绘描边，黄色箭头和感叹号，标题大且有冲击力，像小红书爆款封面但不杂乱。",
+  },
+  {
+    id: "outdoor-handwriting",
+    name: "户外手写",
+    tag: "生活方式",
+    tone: "outdoor",
+    prompt: "自然户外背景，手写大字沿画面边缘排布，阳光、绿植、随手拍质感，适合旅行、生活方式和轻成长内容。",
+  },
+  {
+    id: "contrast-pop",
+    name: "克制撞色",
+    tag: "醒目",
+    tone: "pop",
+    prompt: "高识别撞色边框，人物或主体被干净抠出，标题用两层颜色强调关键词，活泼但保持高级。",
+  },
+  {
+    id: "layered-layout",
+    name: "多层排版",
+    tag: "信息量",
+    tone: "layered",
+    prompt: "多层卡片和半透明信息块，主标题、补充小字、局部贴纸形成清晰层级，适合方法论、清单和知识密度高的内容。",
+  },
+  {
+    id: "study-room",
+    name: "书房知性",
+    tag: "专业感",
+    tone: "study",
+    prompt: "书房、台灯、纸张或电脑桌面氛围，字体稳重，画面偏暖，适合知识博主、复盘和个人 IP 深度观点。",
+  },
+  {
+    id: "workplace-card",
+    name: "职场卡片",
+    tag: "效率",
+    tone: "work",
+    prompt: "办公桌、屏幕、文件卡片和清晰步骤感，主标题放大，适合职场、AI 工具、效率工作流内容。",
+  },
+  {
+    id: "sticker-energy",
+    name: "贴纸活力",
+    tag: "年轻感",
+    tone: "sticker",
+    prompt: "白底或浅色底，大量克制贴纸、星星、箭头、波点，标题像贴纸拼贴，适合轻松种草和实用分享。",
+  },
+  {
+    id: "dashed-outline",
+    name: "虚线装饰",
+    tag: "亲和",
+    tone: "dashed",
+    prompt: "主体周围有虚线框、手绘圈注和小标签，背景干净，标题不过度拥挤，适合经验分享和案例拆解。",
+  },
+  {
+    id: "giant-background-text",
+    name: "背景大字",
+    tag: "记忆点",
+    tone: "giant",
+    prompt: "画面后方有巨型半透明关键词，前景标题和主体形成强对比，适合观点、情绪和强结论内容。",
+  },
+  {
+    id: "question-thinking",
+    name: "思考提问",
+    tag: "互动",
+    tone: "question",
+    prompt: "人物或物件带思考姿态，标题用问句结构，边缘有问号、便签和小批注，适合引发评论和收藏。",
+  },
+  {
+    id: "split-label",
+    name: "分屏标签",
+    tag: "对比",
+    tone: "split",
+    prompt: "左右或上下分屏，对比前后、A/B、误区/正确做法，标签清晰，适合测评、避坑、教程类内容。",
+  },
+  {
+    id: "cozy-home",
+    name: "温馨居家",
+    tag: "疗愈",
+    tone: "cozy",
+    prompt: "暖色家居、咖啡、桌面、柔光窗边，标题温柔但清楚，适合成长、情绪、生活复盘和温暖故事。",
+  },
+  {
+    id: "career-bold",
+    name: "职场大字",
+    tag: "强观点",
+    tone: "career",
+    prompt: "超大黑白或深色标题压屏，局部黄色/红色强调，职场海报感，适合强结论、收入、转型和效率主题。",
+  },
+  {
+    id: "dark-glow",
+    name: "深色发光",
+    tag: "科技",
+    tone: "glow",
+    prompt: "深色背景、边缘发光、玻璃卡片、霓虹细线，标题清晰，适合 AI、工具、未来感和数字产品内容。",
+  },
+  {
+    id: "home-motivation",
+    name: "居家励志",
+    tag: "成长",
+    tone: "motivation",
+    prompt: "居家场景和温柔励志标题，人物或主体自然放松，画面有金色光影和轻微胶片颗粒。",
+  },
+  {
+    id: "quiet-negative-space",
+    name: "情绪留白",
+    tag: "高级",
+    tone: "quiet",
+    prompt: "大面积留白，一个核心物件或安静人物，标题少而有力，适合高级感、反思、人生选择和个人表达。",
+  },
+  {
+    id: "data-collage",
+    name: "信息拼贴",
+    tag: "干货",
+    tone: "data",
+    prompt: "截图、便签、数据卡片和流程箭头拼贴，像创作者工作台，适合工具测评、教程、清单和 SOP。",
+  },
+  {
+    id: "film-ticket",
+    name: "胶片票根",
+    tag: "电影感",
+    tone: "film",
+    prompt: "电影节票根、胶片边框、暖红渐变和排片信息感，标题像海报片名，适合故事、观点和戏剧化表达。",
+  },
+];
+
+const fontStyles = [
+  { id: "default", name: "默认风格", sample: "ABC", prompt: "现代中文黑体，清楚耐看，标题粗细有层级。" },
+  { id: "bold", name: "大粗黑体", sample: "ABC", prompt: "超粗黑体或标题黑体，字形厚重，适合强观点和大标题。" },
+  { id: "variety", name: "综艺体", sample: "ABC", prompt: "综艺感标题字，活泼、有描边和轻微弹跳感，但不要幼稚。" },
+  { id: "songti", name: "稳重宋体", sample: "ABC", prompt: "高对比宋体或新宋体，稳重、有知识感，适合深度内容。" },
+  { id: "rounded", name: "圆体", sample: "ABC", prompt: "圆润中文字体，亲和、柔软，适合生活方式和成长内容。" },
+  { id: "handwritten", name: "手写体", sample: "ABC", prompt: "自然手写中文，像笔记批注，适合真实经验和日记风格。" },
+  { id: "calligraphy", name: "书法体", sample: "ABC", prompt: "克制书法感标题，笔锋清楚，适合东方审美和情绪表达。" },
+];
+
 const els = {
   accessCard: $("#accessCard"),
   accessCode: $("#accessCode"),
@@ -19,6 +158,15 @@ const els = {
   material: $("#material"),
   persona: $("#persona"),
   style: $("#style"),
+  presetGrid: $("#presetGrid"),
+  detailCoverTitle: $("#detailCoverTitle"),
+  detailCoverSubtitle: $("#detailCoverSubtitle"),
+  detailSmallText: $("#detailSmallText"),
+  fontGrid: $("#fontGrid"),
+  aspectRatio: $("#aspectRatio"),
+  detailStickers: $("#detailStickers"),
+  detailRequirements: $("#detailRequirements"),
+  batchVariants: $("#batchVariants"),
   generateDraft: $("#generateDraft"),
   generateCovers: $("#generateCovers"),
   railStatus: $("#railStatus"),
@@ -55,6 +203,8 @@ const state = {
   selectedCoverId: null,
   finalCoverId: null,
   referenceImage: null,
+  selectedPresetId: coverTemplatePresets[0].id,
+  selectedFontId: fontStyles[0].id,
 };
 
 const NETWORK_ERROR_MESSAGE = "本地生成服务没有连接上。请确认预览服务正在运行，然后刷新页面再试。";
@@ -99,7 +249,7 @@ function escapeHTML(value) {
 
 function splitHashtags(value) {
   return String(value || "")
-    .split(/[\s,，]+/)
+    .split(/[\s,，、|/]+/)
     .map((tag) => tag.replace(/^#+/, "").trim())
     .filter(Boolean);
 }
@@ -111,6 +261,79 @@ function friendlyErrorMessage(error, fallback = "请求失败，请稍后重试�
 
 function restoreSelectValue(select, value) {
   if ([...select.options].some((option) => option.value === value)) select.value = value;
+}
+
+function selectedPreset() {
+  return coverTemplatePresets.find((preset) => preset.id === state.selectedPresetId) || coverTemplatePresets[0];
+}
+
+function selectedFont() {
+  return fontStyles.find((font) => font.id === state.selectedFontId) || fontStyles[0];
+}
+
+function normalizeCoverConfig(config = {}) {
+  const preset = coverTemplatePresets.find((item) => item.id === config.templateId) || coverTemplatePresets[0];
+  const font = fontStyles.find((item) => item.id === config.fontId) || fontStyles[0];
+  return {
+    templateId: preset.id,
+    templateName: preset.name,
+    templatePrompt: preset.prompt,
+    fontId: font.id,
+    fontName: font.name,
+    fontPrompt: font.prompt,
+    mainTitle: String(config.mainTitle || "").trim(),
+    subtitle: String(config.subtitle || "").trim(),
+    smallText: String(config.smallText || "").trim(),
+    stickers: String(config.stickers || "").trim(),
+    aspectRatio: String(config.aspectRatio || "3:4"),
+    extraRequirements: String(config.extraRequirements || "").trim(),
+    batchVariants: Boolean(config.batchVariants),
+  };
+}
+
+function currentCoverConfig() {
+  const preset = selectedPreset();
+  const font = selectedFont();
+  return normalizeCoverConfig({
+    templateId: preset.id,
+    templateName: preset.name,
+    templatePrompt: preset.prompt,
+    fontId: font.id,
+    fontName: font.name,
+    fontPrompt: font.prompt,
+    mainTitle: els.detailCoverTitle.value,
+    subtitle: els.detailCoverSubtitle.value,
+    smallText: els.detailSmallText.value,
+    stickers: els.detailStickers.value,
+    aspectRatio: els.aspectRatio.value,
+    extraRequirements: els.detailRequirements.value,
+    batchVariants: els.batchVariants.checked,
+  });
+}
+
+function applyCoverConfig(config = {}) {
+  const normalized = normalizeCoverConfig(config);
+  state.selectedPresetId = normalized.templateId;
+  state.selectedFontId = normalized.fontId;
+  els.detailCoverTitle.value = normalized.mainTitle;
+  els.detailCoverSubtitle.value = normalized.subtitle;
+  els.detailSmallText.value = normalized.smallText;
+  els.detailStickers.value = normalized.stickers;
+  restoreSelectValue(els.aspectRatio, normalized.aspectRatio);
+  els.detailRequirements.value = normalized.extraRequirements;
+  els.batchVariants.checked = normalized.batchVariants;
+  renderPresetGrid();
+  renderFontGrid();
+}
+
+function syncDetailFieldsFromPackage(data) {
+  if (!data) return;
+  if (!els.detailCoverTitle.value.trim()) els.detailCoverTitle.value = data.coverTitle || "";
+  if (!els.detailCoverSubtitle.value.trim()) els.detailCoverSubtitle.value = data.coverSubtitle || "";
+}
+
+function imageSizeForAspectRatio(aspectRatio) {
+  return aspectRatio === "1:1" ? "1024x1024" : "1024x1536";
 }
 
 async function postJSON(path, body) {
@@ -257,6 +480,7 @@ function saveDraftState() {
       material: els.material.value,
       persona: els.persona.value,
       style: els.style.value,
+      coverConfig: currentCoverConfig(),
       phase: state.phase,
       packageData: state.packageData,
       covers,
@@ -278,6 +502,7 @@ async function restoreDraftState() {
     els.material.value = draft.material || "";
     restoreSelectValue(els.persona, draft.persona);
     restoreSelectValue(els.style, draft.style);
+    applyCoverConfig(draft.coverConfig || {});
     state.packageData = draft.packageData || null;
     state.covers = Array.isArray(draft.covers) ? draft.covers : [];
     state.referenceImage = null;
@@ -324,6 +549,7 @@ async function checkStatus() {
 
 function collectPackageFromInputs() {
   if (!state.packageData) return null;
+  const coverConfig = currentCoverConfig();
   const coverPrompts = $$(".prompt-card").map((card, index) => ({
     id: state.packageData.coverPrompts[index]?.id || `cover-${index + 1}`,
     name: card.querySelector("[data-field='name']").value.trim() || `版本 ${index + 1}`,
@@ -332,13 +558,16 @@ function collectPackageFromInputs() {
   }));
   state.packageData = {
     ...state.packageData,
-    coverTitle: els.coverTitle.value.trim(),
-    coverSubtitle: els.coverSubtitle.value.trim(),
+    coverTitle: coverConfig.mainTitle || els.coverTitle.value.trim(),
+    coverSubtitle: coverConfig.subtitle || els.coverSubtitle.value.trim(),
     publishTitle: els.publishTitle.value.trim(),
     body: els.body.value.trim(),
     hashtags: splitHashtags(els.hashtags.value),
+    coverConfig,
     coverPrompts,
   };
+  els.coverTitle.value = state.packageData.coverTitle;
+  els.coverSubtitle.value = state.packageData.coverSubtitle;
   return state.packageData;
 }
 
@@ -473,6 +702,77 @@ async function clearReferenceImage() {
   saveDraftState();
 }
 
+function renderPresetGrid() {
+  els.presetGrid.innerHTML = coverTemplatePresets
+    .map((preset) => {
+      const selected = preset.id === state.selectedPresetId;
+      return `
+        <button class="preset-card ${selected ? "selected" : ""}" type="button" data-preset-id="${escapeHTML(preset.id)}">
+          <span class="preset-art tone-${escapeHTML(preset.tone)}">
+            <i></i>
+            <b>${escapeHTML(preset.name.slice(0, 4))}</b>
+            <em>${escapeHTML(preset.tag)}</em>
+          </span>
+          <strong>${escapeHTML(preset.name)}</strong>
+          <small>${escapeHTML(preset.tag)}</small>
+        </button>
+      `;
+    })
+    .join("");
+
+  $$(".preset-card").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.selectedPresetId = button.dataset.presetId;
+      renderPresetGrid();
+      renderPreview();
+      saveDraftState();
+    });
+  });
+}
+
+function renderFontGrid() {
+  els.fontGrid.innerHTML = fontStyles
+    .map((font) => {
+      const selected = font.id === state.selectedFontId;
+      return `
+        <button class="font-card font-${escapeHTML(font.id)} ${selected ? "selected" : ""}" type="button" data-font-id="${escapeHTML(font.id)}">
+          <b>${escapeHTML(font.sample)}</b>
+          <strong>字体</strong>
+          <small>${escapeHTML(font.name)}</small>
+        </button>
+      `;
+    })
+    .join("");
+
+  $$(".font-card").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.selectedFontId = button.dataset.fontId;
+      renderFontGrid();
+      renderPreview();
+      saveDraftState();
+    });
+  });
+}
+
+function renderConfigPreview(config, data) {
+  const title = config.mainTitle || data?.coverTitle || "封面主标题";
+  const subtitle = config.subtitle || data?.coverSubtitle || "副标题";
+  const smallText = config.smallText || "NEW NOTE";
+  const stickers = splitHashtags(config.stickers).slice(0, 3);
+  return `
+    <div class="config-poster-preview tone-${escapeHTML(selectedPreset().tone)} font-${escapeHTML(config.fontId)}">
+      <span class="preview-kicker">${escapeHTML(smallText)}</span>
+      <strong>${escapeHTML(title)}</strong>
+      <p>${escapeHTML(subtitle)}</p>
+      <div class="preview-stickers">
+        ${(stickers.length ? stickers : [selectedPreset().tag, config.fontName])
+          .map((item) => `<i>${escapeHTML(item)}</i>`)
+          .join("")}
+      </div>
+    </div>
+  `;
+}
+
 async function generateDraft() {
   persistAccessCode();
   const material = els.material.value.trim();
@@ -489,6 +789,7 @@ async function generateDraft() {
       persona: els.persona.value,
       style: els.style.value,
       referenceImageName: state.referenceImage?.name || "",
+      coverConfig: currentCoverConfig(),
     });
     state.covers = [];
     state.selectedCoverId = null;
@@ -520,6 +821,7 @@ function renderDraft() {
   els.body.value = data.body || "";
   els.hashtags.value = (data.hashtags || []).map((tag) => `#${tag}`).join(" ");
   els.generateCovers.disabled = false;
+  syncDetailFieldsFromPackage(data);
 
   els.coverPromptList.innerHTML = data.coverPrompts
     .map(
@@ -553,6 +855,8 @@ async function generateOneCover(cover, revision = "") {
     coverSubtitle: state.packageData.coverSubtitle,
     basePrompt: cover.prompt,
     revision,
+    coverConfig: currentCoverConfig(),
+    size: imageSizeForAspectRatio(currentCoverConfig().aspectRatio),
     referenceImage: state.referenceImage
       ? {
           name: state.referenceImage.name,
@@ -665,16 +969,12 @@ function renderCoverGrid() {
 
 function renderPreview() {
   const cover = selectedCover() || finalCover();
+  const config = currentCoverConfig();
+  els.previewScreen.dataset.aspect = config.aspectRatio || "3:4";
   if (!cover?.imageUrl) {
-    els.previewScreen.innerHTML = `
-      <div class="poster-placeholder">
-        <span>Cover</span>
-        <strong>${state.packageData ? escapeHTML(state.packageData.coverTitle) : "等待生成"}</strong>
-        <p>5 个版本会在这里预览。</p>
-      </div>
-    `;
+    els.previewScreen.innerHTML = renderConfigPreview(config, state.packageData);
     els.previewBadge.textContent = cover?.status === "loading" ? "生成中" : "未生成";
-    els.miniLog.textContent = "修改窗口会保留当前版本的重生成记录。";
+    els.miniLog.textContent = `当前模板：${selectedPreset().name}；字体：${selectedFont().name}。`;
     return;
   }
 
@@ -822,12 +1122,33 @@ function bindEvents() {
   els.material.addEventListener("input", saveDraftState);
   els.persona.addEventListener("change", saveDraftState);
   els.style.addEventListener("change", saveDraftState);
+  [
+    els.detailCoverTitle,
+    els.detailCoverSubtitle,
+    els.detailSmallText,
+    els.aspectRatio,
+    els.detailStickers,
+    els.detailRequirements,
+    els.batchVariants,
+  ].forEach((element) => {
+    element.addEventListener("input", () => {
+      renderPreview();
+      saveDraftState();
+    });
+    element.addEventListener("change", () => {
+      renderPreview();
+      saveDraftState();
+    });
+  });
   els.steps.forEach((step) => {
     step.addEventListener("click", () => showStep(step.dataset.step));
   });
 }
 
+renderPresetGrid();
+renderFontGrid();
 bindEvents();
 await restoreDraftState();
 renderReferencePreview();
+renderPreview();
 await checkStatus();

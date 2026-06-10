@@ -26,6 +26,21 @@
           <input id="accessCode" type="password" autocomplete="off" placeholder="输入访问码" />
         </section>
 
+        <section class="preset-section" aria-labelledby="presetTitle">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">Preset Library</p>
+              <h2 id="presetTitle">选择封面风格</h2>
+            </div>
+            <div class="preset-tabs" aria-label="风格库切换">
+              <button type="button" class="active">预设风格</button>
+              <button type="button" disabled>我的风格库</button>
+            </div>
+          </div>
+          <p class="section-note">先选一个版式方向，右侧再填标题、字体、贴纸和额外要求。</p>
+          <div class="preset-grid" id="presetGrid"></div>
+        </section>
+
         <label class="field">
           <span>上传文案文件</span>
           <input id="fileInput" type="file" accept=".txt,.md,.docx,.doc,.pdf,video/*" />
@@ -179,6 +194,58 @@
       </main>
 
       <aside class="preview-dock" aria-label="封面预览">
+        <section class="detail-config" aria-labelledby="configTitle">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">Cover Control</p>
+              <h2 id="configTitle">详细配置</h2>
+            </div>
+          </div>
+
+          <label class="field">
+            <span>封面主标题（大字）</span>
+            <input id="detailCoverTitle" type="text" placeholder="例如：双11必买清单" />
+          </label>
+          <label class="field">
+            <span>副标题（小字）</span>
+            <input id="detailCoverSubtitle" type="text" placeholder="例如：省钱攻略｜凑单作业" />
+          </label>
+          <label class="field">
+            <span>小字 / 角标</span>
+            <input id="detailSmallText" type="text" placeholder="例如：新手版、亲测有效、收藏备用" />
+          </label>
+
+          <div class="font-panel">
+            <span>字体风格（点选预览）</span>
+            <div class="font-grid" id="fontGrid" aria-label="字体风格"></div>
+          </div>
+
+          <label class="field">
+            <span>图片比例</span>
+            <select id="aspectRatio">
+              <option value="3:4">3:4（小红书竖版）</option>
+              <option value="4:5">4:5（更接近信息流）</option>
+              <option value="1:1">1:1（方图）</option>
+              <option value="9:16">9:16（超竖版）</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>添加装饰 / 贴纸（可选）</span>
+            <input id="detailStickers" type="text" placeholder="例如：New 标签、星星特效、手绘箭头" />
+          </label>
+          <label class="field">
+            <span>其他要求（给 AI 的备注）</span>
+            <textarea id="detailRequirements" rows="4" placeholder="例如：背景虚化一点，人物放在左边，整体色调要偏暖。"></textarea>
+          </label>
+          <label class="batch-toggle">
+            <input id="batchVariants" type="checkbox" />
+            <span>
+              <strong>批量模式</strong>
+              为同一风格生成 5 张不同变体，适合先定模板再挑图。
+            </span>
+          </label>
+        </section>
+
         <div class="preview-head">
           <div>
             <p class="eyebrow">Live Preview</p>

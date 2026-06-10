@@ -8,6 +8,15 @@ test("copy prompt asks for five cover directions and publish package fields", ()
     persona: "AI + IP 实战，小白友好",
     style: "根据文案自动匹配",
     referenceImageName: "参考海报.png",
+    coverConfig: {
+      templateName: "手绘边框",
+      templatePrompt: "粗手绘描边和黄色箭头",
+      fontName: "大粗黑体",
+      mainTitle: "AI 封面不翻车",
+      smallText: "新手版",
+      stickers: "星星、箭头",
+      batchVariants: true,
+    },
   });
 
   assert.match(prompt, /coverPrompts\[5\]/);
@@ -16,6 +25,10 @@ test("copy prompt asks for five cover directions and publish package fields", ()
   assert.match(prompt, /AI 直接生成中文标题/);
   assert.match(prompt, /5 个封面方向必须有真实差异/);
   assert.match(prompt, /参考海报\.png/);
+  assert.match(prompt, /手绘边框/);
+  assert.match(prompt, /大粗黑体/);
+  assert.match(prompt, /AI 封面不翻车/);
+  assert.match(prompt, /批量模式为“是”/);
 });
 
 test("normalizes a complete cover package into five editable cover prompts", () => {
@@ -44,14 +57,26 @@ test("cover prompt keeps each version distinct and can carry reference image not
     basePrompt: "雾蓝背景，模块化知识卡片，三段步骤",
     revision: "标题更短，颜色更清爽一点",
     referenceImageName: "参考图.jpg",
+    coverConfig: {
+      templateName: "分屏标签",
+      fontName: "稳重宋体",
+      smallText: "收藏备用",
+      stickers: "A/B 标签",
+      aspectRatio: "4:5",
+      extraRequirements: "左边放误区，右边放正确做法",
+    },
   });
 
   assert.match(prompt, /小红书封面/);
+  assert.match(prompt, /比例 4:5/);
   assert.match(prompt, /不要把所有版本统一成红黑风格/);
   assert.match(prompt, /构图和色彩上明显不同/);
   assert.match(prompt, /参考图\.jpg/);
   assert.match(prompt, /标题更短/);
   assert.match(prompt, /中文标题必须清晰可读/);
+  assert.match(prompt, /分屏标签/);
+  assert.match(prompt, /稳重宋体/);
+  assert.match(prompt, /左边放误区/);
 });
 
 test("publish exports include title body hashtags and selected cover filename", () => {

@@ -29,10 +29,36 @@ function cleanHashtag(value) {
   return cleanText(value).replace(/^#+/, "").replace(/\s+/g, "");
 }
 
-export function buildCopyPrompt({ material, persona, style, referenceImageName = "" }) {
+function coverConfigLines(coverConfig = {}) {
+  const lines = [];
+  const templateName = cleanText(coverConfig.templateName);
+  const templatePrompt = cleanText(coverConfig.templatePrompt);
+  const fontName = cleanText(coverConfig.fontName);
+  const fontPrompt = cleanText(coverConfig.fontPrompt);
+  const mainTitle = cleanText(coverConfig.mainTitle);
+  const subtitle = cleanText(coverConfig.subtitle);
+  const smallText = cleanText(coverConfig.smallText);
+  const stickers = cleanText(coverConfig.stickers);
+  const aspectRatio = cleanText(coverConfig.aspectRatio);
+  const extraRequirements = cleanText(coverConfig.extraRequirements);
+
+  if (templateName) lines.push(`预设封面风格：${templateName}${templatePrompt ? `。风格要求：${templatePrompt}` : ""}`);
+  if (fontName) lines.push(`字体风格：${fontName}${fontPrompt ? `。字体要求：${fontPrompt}` : ""}`);
+  if (mainTitle) lines.push(`用户指定封面主标题：${mainTitle}`);
+  if (subtitle) lines.push(`用户指定封面副标题：${subtitle}`);
+  if (smallText) lines.push(`小字/角标：${smallText}`);
+  if (stickers) lines.push(`装饰/贴纸：${stickers}`);
+  if (aspectRatio) lines.push(`图片比例：${aspectRatio}`);
+  if (extraRequirements) lines.push(`其他要求：${extraRequirements}`);
+  lines.push(`批量模式：${coverConfig.batchVariants ? "是，同一预设风格下生成 5 个不同变体" : "否，预设风格优先用于第 1 个方向，其余方向保持差异"}`);
+  return lines;
+}
+
+export function buildCopyPrompt({ material, persona, style, referenceImageName = "", coverConfig = {} }) {
   const referenceLine = cleanText(referenceImageName)
     ? `用户已上传参考图：${cleanText(referenceImageName)}。文案模型不需要猜测图片内容，但 5 个封面提示词都要写明“生成时参考用户上传的参考图的配色、质感或版式节奏”，同时仍保持 5 个版本差异。`
     : "用户没有上传参考图，请完全根据文案内容自动匹配视觉风格。";
+  const configLines = coverConfigLines(coverConfig);
   return [
     "你是小红书封面策划、发布文案编辑和 AI 生图提示词导演。",
     "请根据用户给的文案/素材，生成一份小红书封面发布包草稿。",
@@ -56,6 +82,9 @@ export function buildCopyPrompt({ material, persona, style, referenceImageName =
     "- 5 个封面方向必须有真实差异：版式、主色、视觉隐喻、场景、标题位置、背景元素都要明显不同，让用户有选择价值。",
     "- 每个封面方向都必须包含同一个封面主标题和副标题，但不能只是同风格换小元素。",
     "- 封面图由 AI 直接生成中文标题，不做后期模板叠字；因此提示词里必须强调中文标题必须清晰可读，不要错字、乱码、伪字。",
+    "- 如果用户在封面详细配置里指定了主标题、副标题、小字、字体、贴纸、比例或其他要求，必须优先服从这些配置。",
+    "- 如果批量模式为“是”，5 个方向都围绕用户选择的同一预设封面风格做不同变体，差异体现在构图、色彩细节、主体位置、标题层级和装饰节奏。",
+    "- 如果批量模式为“否”，第 1 个方向优先使用用户选择的预设封面风格，其余 4 个方向可以更发散，但都要保留用户填写的标题、字体和画面要求。",
     "- 5 个方向建议覆盖：强观点电影海报、清爽知识卡片、温柔生活方式、人物/IP 访谈主视觉、极简概念隐喻。可以根据素材微调，但不要让 5 张看起来像同一模板。",
     "- 配色必须跟内容情绪匹配：强观点可用深色/红色，教程可用清爽低饱和色，生活成长可用暖色或灰粉，商业/效率可用冷静蓝绿，情绪故事可用胶片暖光。",
     "- 除非用户明确要求全套红色，否则最多 1-2 个方向使用红黑或深红配色，其他方向必须换主色和版式。",
@@ -67,6 +96,8 @@ export function buildCopyPrompt({ material, persona, style, referenceImageName =
     "",
     `账号感觉：${cleanText(persona, "AI + IP 实战，小白友好")}`,
     `视觉偏好：${cleanText(style, "根据文案自动匹配")}`,
+    "封面详细配置：",
+    ...configLines.map((line) => `- ${line}`),
     `用户素材：${cleanText(material)}`,
   ].join("\n");
 }
@@ -125,13 +156,17 @@ export function normalizeCopyPackage(value) {
   };
 }
 
-export function buildCoverPrompt({ coverTitle, coverSubtitle, basePrompt, revision = "", referenceImageName = "" }) {
+export function buildCoverPrompt({ coverTitle, coverSubtitle, basePrompt, revision = "", referenceImageName = "", coverConfig = {} }) {
+  const configLines = coverConfigLines(coverConfig);
+  const aspectRatio = cleanText(coverConfig.aspectRatio, "3:4");
   return [
-    "生成一张小红书封面图，比例 3:4，适合手机信息流第一眼点击。",
+    `生成一张小红书封面图，比例 ${aspectRatio}，适合手机信息流第一眼点击。`,
     `封面主标题：${cleanText(coverTitle)}`,
     cleanText(coverSubtitle) ? `封面副标题：${cleanText(coverSubtitle)}` : "",
+    configLines.length ? `封面详细配置：\n${configLines.map((line) => `- ${line}`).join("\n")}` : "",
     "",
     "优先遵守“本版提示词”里的视觉策略、主色、版式、场景和隐喻；不要把所有版本统一成红黑风格。",
+    "优先遵守封面详细配置里的预设风格、字体风格、标题文字、小字/角标、贴纸装饰、图片比例和其他要求。",
     "这张图需要和同批其他封面在构图和色彩上明显不同，像一个独立方案，而不是同一模板换皮。",
     "可以使用电影感、杂志感、知识卡片、生活方式、极简隐喻等风格，但必须服务于内容主题。",
     "中文标题必须清晰可读，不要错字、乱码、伪字；标题是画面核心，不要被背景遮住。",
