@@ -706,9 +706,11 @@ function renderPresetGrid() {
   els.presetGrid.innerHTML = coverTemplatePresets
     .map((preset) => {
       const selected = preset.id === state.selectedPresetId;
+      const imageSrc = `./assets/presets/${preset.id}.jpg`;
       return `
         <button class="preset-card ${selected ? "selected" : ""}" type="button" data-preset-id="${escapeHTML(preset.id)}">
           <span class="preset-art tone-${escapeHTML(preset.tone)}">
+            <img src="${escapeHTML(imageSrc)}" alt="${escapeHTML(preset.name)}模板图" loading="eager" decoding="async" />
             <i></i>
             <b>${escapeHTML(preset.name.slice(0, 4))}</b>
             <em>${escapeHTML(preset.tag)}</em>
