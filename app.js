@@ -173,6 +173,7 @@ const els = {
   providerPill: $("#providerPill"),
   steps: $$(".step"),
   panels: $$(".stage-panel"),
+  draftPanel: $("#draftPanel"),
   coverTitle: $("#coverTitle"),
   coverSubtitle: $("#coverSubtitle"),
   publishTitle: $("#publishTitle"),
@@ -803,6 +804,7 @@ async function generateDraft() {
     showStep("draft");
     els.generateCovers.disabled = false;
     els.railStatus.textContent = "草稿已生成。你可以先改标题、正文、话题或任意封面提示词。";
+    requestAnimationFrame(() => els.draftPanel.scrollIntoView({ behavior: "smooth", block: "start" }));
     toast("封面发布包草稿已生成。");
   } catch (error) {
     const message = friendlyErrorMessage(error, "生成失败。");

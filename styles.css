@@ -2287,17 +2287,14 @@ body::after {
 
 /* Final template-workbench overrides */
 .app-shell {
-  grid-template-columns: minmax(280px, 340px) minmax(420px, 520px) minmax(430px, 1fr);
+  grid-template-columns: minmax(280px, 340px) minmax(560px, 680px) minmax(430px, 1fr);
   align-items: start;
 }
 
 .studio-stage {
   gap: 14px;
-  max-height: calc(100vh - 44px);
-  overflow-x: hidden;
-  overflow-y: auto;
-  scrollbar-color: rgba(255, 96, 68, 0.78) rgba(255, 255, 255, 0.05);
-  scrollbar-width: thin;
+  max-height: none;
+  overflow: visible;
 }
 
 .studio-stage .stage-top h2 {
@@ -2305,10 +2302,47 @@ body::after {
 }
 
 .studio-stage .detail-config {
+  order: 4;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
   margin: 0;
   padding: 14px;
+}
+
+.studio-stage .stage-top {
+  order: 1;
+}
+
+.studio-stage .step-strip {
+  order: 2;
+}
+
+.studio-stage #draftPanel {
+  order: 3;
+}
+
+.studio-stage #draftPanel.active {
+  display: flex;
+  flex-direction: column;
+  min-height: clamp(560px, 64vh, 820px);
+  overflow: visible;
+}
+
+.studio-stage #draftPanel .panel-head {
+  align-items: center;
+}
+
+.studio-stage #draftPanel .cover-prompt-list {
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  align-content: start;
+  min-height: 260px;
+  overflow: visible;
+}
+
+.studio-stage #draftPanel .empty-state {
+  min-height: 220px;
+  display: grid;
+  place-items: center;
 }
 
 .detail-config .section-head,
